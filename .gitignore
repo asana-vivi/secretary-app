@@ -1,0 +1,19 @@
+# 個人データ（メモ・タスク・振り返りの中身）は公開しない
+data.json
+
+# 依存パッケージ
+node_modules/
+
+# Claude Code の作業用設定
+.claude/
+
+# OS が作る不要ファイル
+Thumbs.db
+.DS_Store
+
+# 別プロジェクト（架空企業ホームページ）のファイル。秘書アプリには含めない
+about.html
+company.html
+index.html
+services.html
+style.css

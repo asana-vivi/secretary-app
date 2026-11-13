@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自分専用の秘書アプリ</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #1f2430;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --accent: #4f6ef7;
+      --accent-dark: #3b55d9;
+      --green: #16a34a;
+      --red: #dc2626;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 60px; }
+    header h1 { font-size: 24px; margin: 0 0 4px; }
+    header p { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+
+    /* ダッシュボード */
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .stat .num { font-size: 30px; font-weight: 700; }
+    .stat .label { font-size: 13px; color: var(--muted); }
+    .stat.pending .num { color: var(--accent); }
+
+    /* 最新の振り返りバナー */
+    .latest-review {
+      background: linear-gradient(135deg, #eef2ff, #f6f8ff);
+      border: 1px solid #d8def7;
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow);
+    }
+    .latest-review .lr-head { font-weight: 700; font-size: 14px; }
+    .latest-review .lr-week { color: var(--accent-dark); margin-left: 6px; font-size: 13px; }
+    .latest-review .lr-comment { white-space: pre-wrap; font-size: 14px; margin-top: 6px; }
+    .latest-review.is-empty { color: var(--muted); }
+    .latest-review.is-empty .lr-comment { color: var(--muted); }
+
+    .review-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .review-item .r-week { font-weight: 700; color: var(--accent-dark); }
+    .review-item .r-comment { white-space: pre-wrap; margin: 4px 0; font-size: 14px; }
+
+    /* カード共通 */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 22px;
+      box-shadow: var(--shadow);
+    }
+    .card h2 { font-size: 17px; margin: 0 0 14px; }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      margin-bottom: 10px;
+      background: #fff;
+      color: var(--text);
+    }
+    textarea { resize: vertical; min-height: 70px; }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn:hover { background: var(--accent-dark); }
+    .row { display: flex; gap: 8px; }
+    .row input { flex: 1; margin-bottom: 0; }
+
+    /* 一覧 */
+    .list { list-style: none; padding: 0; margin: 0; }
+    .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+
+    .memo-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .memo-item .m-title { font-weight: 700; }
+    .memo-item .m-body { white-space: pre-wrap; margin: 4px 0; font-size: 14px; }
+    .meta { font-size: 12px; color: var(--muted); }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    .task-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    .task-item .t-main { flex: 1; }
+    .task-item .t-text { font-size: 14px; }
+    .task-item.done .t-text { text-decoration: line-through; color: var(--muted); }
+    .badge {
+      font-size: 11px; padding: 2px 8px; border-radius: 999px;
+      border: 1px solid var(--border); color: var(--muted);
+    }
+    .badge.open { color: var(--accent); border-color: var(--accent); }
+    .badge.done { color: var(--green); border-color: var(--green); }
+
+    .icon-btn {
+      background: transparent; border: none; cursor: pointer;
+      color: var(--red); font-size: 13px; padding: 4px 6px;
+    }
+    .icon-btn:hover { text-decoration: underline; }
+
+    @media (max-width: 560px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>📋 自分専用の秘書アプリ</h1>
+      <p>メモとタスクを管理します。入力した内容はファイルに保存され、閉じても残ります。</p>
+    </header>
+
+    <!-- ダッシュボード -->
+    <section class="dashboard">
+      <div class="stat"><div class="num" id="stat-memo">0</div><div class="label">メモの件数</div></div>
+      <div class="stat"><div class="num" id="stat-task">0</div><div class="label">タスクの件数</div></div>
+      <div class="stat pending"><div class="num" id="stat-pending">0</div><div class="label">未完了タスク</div></div>
+    </section>
+
+    <!-- 最新の振り返り（ダッシュボード） -->
+    <section class="latest-review" id="latest-review">
+      <div class="lr-head">🔁 最新の振り返り <span class="lr-week" id="lr-week"></span></div>
+      <div class="lr-comment" id="lr-comment"></div>
+    </section>
+
+    <!-- メモ追加 -->
+    <section class="card">
+      <h2>📝 メモを追加</h2>
+      <input type="text" id="memo-title" placeholder="タイトル" />
+      <textarea id="memo-content" placeholder="本文"></textarea>
+      <button class="btn" id="memo-add">メモを追加</button>
+    </section>
+
+    <!-- メモ一覧 -->
+    <section class="card">
+      <h2>メモ一覧</h2>
+      <ul class="list" id="memo-list"></ul>
+    </section>
+
+    <!-- タスク追加 -->
+    <section class="card">
+      <h2>✅ タスクを追加</h2>
+      <div class="row">
+        <input type="text" id="task-text" placeholder="やること" />
+        <button class="btn" id="task-add">追加</button>
+      </div>
+    </section>
+
+    <!-- タスク一覧 -->
+    <section class="card">
+      <h2>タスク一覧</h2>
+      <ul class="list" id="task-list"></ul>
+    </section>
+
+    <!-- 週次振り返り追加 -->
+    <section class="card">
+      <h2>🔁 週次の振り返りを記録</h2>
+      <input type="week" id="review-week" />
+      <textarea id="review-comment" placeholder="今週の振り返りコメント（うまくいったこと・改善点など）"></textarea>
+      <button class="btn" id="review-add">振り返りを記録</button>
+      <p class="meta" style="margin:8px 0 0;">※ 同じ週をもう一度記録すると内容が上書きされます。</p>
+    </section>
+
+    <!-- 振り返り一覧 -->
+    <section class="card">
+      <h2>振り返り一覧</h2>
+      <ul class="list" id="review-list"></ul>
+    </section>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function fmtDate(iso) {
+      const d = new Date(iso);
+      const p = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    async function api(method, url, body) {
+      const opt = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body) opt.body = JSON.stringify(body);
+      const res = await fetch(url, opt);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || '通信エラー');
+      return data;
+    }
+
+    async function refresh() {
+      const state = await api('GET', '/api/state');
+      // ダッシュボード
+      $('stat-memo').textContent = state.stats.memoCount;
+      $('stat-task').textContent = state.stats.taskCount;
+      $('stat-pending').textContent = state.stats.pendingTaskCount;
+      renderLatestReview(state.stats.latestReview);
+      renderMemos(state.memos);
+      renderTasks(state.tasks);
+      renderReviews(state.reviews);
+    }
+
+    // "2026-W46" を "2026年 第46週" に整形
+    function fmtWeek(week) {
+      const m = /^(\d{4})-W(\d{2})$/.exec(week || '');
+      return m ? `${m[1]}年 第${Number(m[2])}週` : (week || '');
+    }
+
+    function renderLatestReview(review) {
+      const box = $('latest-review');
+      if (!review) {
+        box.classList.add('is-empty');
+        $('lr-week').textContent = '';
+        $('lr-comment').textContent = 'まだ振り返りがありません。下の欄から記録できます。';
+        return;
+      }
+      box.classList.remove('is-empty');
+      $('lr-week').textContent = fmtWeek(review.week);
+      $('lr-comment').textContent = review.comment;
+    }
+
+    function renderReviews(reviews) {
+      const list = $('review-list');
+      if (!reviews.length) {
+        list.innerHTML = '<li class="empty">まだ振り返りがありません。</li>';
+        return;
+      }
+      list.innerHTML = reviews.map((r) => `
+        <li class="review-item">
+          <div class="r-week">${escapeHtml(fmtWeek(r.week))}</div>
+          <div class="r-comment">${escapeHtml(r.comment)}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="meta">記録: ${fmtDate(r.updatedAt || r.createdAt)}</span>
+            <button class="icon-btn" data-del-review="${r.id}">削除</button>
+          </div>
+        </li>`).join('');
+    }
+
+    function renderMemos(memos) {
+      const list = $('memo-list');
+      if (!memos.length) {
+        list.innerHTML = '<li class="empty">まだメモがありません。</li>';
+        return;
+      }
+      list.innerHTML = memos.map((m) => `
+        <li class="memo-item">
+          ${m.title ? `<div class="m-title">${escapeHtml(m.title)}</div>` : ''}
+          ${m.content ? `<div class="m-body">${escapeHtml(m.content)}</div>` : ''}
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="meta">作成: ${fmtDate(m.createdAt)}</span>
+            <button class="icon-btn" data-del-memo="${m.id}">削除</button>
+          </div>
+        </li>`).join('');
+    }
+
+    function renderTasks(tasks) {
+      const list = $('task-list');
+      if (!tasks.length) {
+        list.innerHTML = '<li class="empty">まだタスクがありません。</li>';
+        return;
+      }
+      list.innerHTML = tasks.map((t) => `
+        <li class="task-item ${t.done ? 'done' : ''}">
+          <input type="checkbox" data-toggle="${t.id}" ${t.done ? 'checked' : ''} />
+          <div class="t-main">
+            <div class="t-text">${escapeHtml(t.text)}</div>
+            <span class="meta">作成: ${fmtDate(t.createdAt)}</span>
+            <span class="badge ${t.done ? 'done' : 'open'}">${t.done ? '完了' : '未完了'}</span>
+          </div>
+          <button class="icon-btn" data-del-task="${t.id}">削除</button>
+        </li>`).join('');
+    }
+
+    // メモ追加
+    $('memo-add').addEventListener('click', async () => {
+      const title = $('memo-title').value.trim();
+      const content = $('memo-content').value.trim();
+      if (!title && !content) { alert('タイトルまたは本文を入力してください'); return; }
+      try {
+        await api('POST', '/api/memos', { title, content });
+        $('memo-title').value = '';
+        $('memo-content').value = '';
+        await refresh();
+      } catch (e) { alert(e.message); }
+    });
+
+    // タスク追加
+    async function addTask() {
+      const text = $('task-text').value.trim();
+      if (!text) { alert('タスク内容を入力してください'); return; }
+      try {
+        await api('POST', '/api/tasks', { text });
+        $('task-text').value = '';
+        await refresh();
+      } catch (e) { alert(e.message); }
+    }
+    $('task-add').addEventListener('click', addTask);
+    $('task-text').addEventListener('keydown', (e) => { if (e.key === 'Enter') addTask(); });
+
+    // 現在のISO週を "YYYY-Www" 形式で求め、週入力の初期値にする
+    function currentIsoWeek() {
+      const d = new Date();
+      const target = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNr = (target.getUTCDay() + 6) % 7; // 月曜=0
+      target.setUTCDate(target.getUTCDate() - dayNr + 3); // その週の木曜
+      const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+      const firstDayNr = (firstThursday.getUTCDay() + 6) % 7;
+      firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNr + 3);
+      const week = 1 + Math.round((target - firstThursday) / (7 * 24 * 3600 * 1000));
+      return `${target.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+    }
+    $('review-week').value = currentIsoWeek();
+
+    // 振り返り記録
+    $('review-add').addEventListener('click', async () => {
+      const week = $('review-week').value;
+      const comment = $('review-comment').value.trim();
+      if (!week) { alert('週を選択してください'); return; }
+      if (!comment) { alert('振り返りコメントを入力してください'); return; }
+      try {
+        await api('POST', '/api/reviews', { week, comment });
+        $('review-comment').value = '';
+        await refresh();
+      } catch (e) { alert(e.message); }
+    });
+
+    // 一覧内のクリック（削除・完了切替）を委譲で処理
+    document.body.addEventListener('click', async (e) => {
+      const delMemo = e.target.getAttribute?.('data-del-memo');
+      const delTask = e.target.getAttribute?.('data-del-task');
+      const delReview = e.target.getAttribute?.('data-del-review');
+      if (delMemo) {
+        if (confirm('このメモを削除しますか？')) {
+          await api('DELETE', '/api/memos/' + delMemo);
+          await refresh();
+        }
+      } else if (delTask) {
+        if (confirm('このタスクを削除しますか？')) {
+          await api('DELETE', '/api/tasks/' + delTask);
+          await refresh();
+        }
+      } else if (delReview) {
+        if (confirm('この振り返りを削除しますか？')) {
+          await api('DELETE', '/api/reviews/' + delReview);
+          await refresh();
+        }
+      }
+    });
+
+    document.body.addEventListener('change', async (e) => {
+      const toggle = e.target.getAttribute?.('data-toggle');
+      if (toggle) {
+        await api('PATCH', '/api/tasks/' + toggle, { done: e.target.checked });
+        await refresh();
+      }
+    });
+
+    // 初期表示
+    refresh().catch((e) => alert('読み込みに失敗しました: ' + e.message));
+  </script>
+</body>
+</html>
